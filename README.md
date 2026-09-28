@@ -6,6 +6,8 @@ An interactive, responsive trivia web application that reads questions and answe
 ![Platform](https://img.shields.io/badge/platform-GitHub%20Pages-brightgreen)
 ![Status](https://img.shields.io/badge/status-active-success)
 
+🎮 **Live Web App**: [https://senjumomo.github.io/quizzlet/](https://senjumomo.github.io/quizzlet/)
+
 ---
 
 ## ✨ Features
@@ -67,15 +69,15 @@ git init -b main
 git add .
 git commit -m "Initial commit: QuizPulse Google Sheet Trivia Engine"
 
-# Link your remote repository (replace YOUR-USERNAME and YOUR-REPO)
-git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
+# Link your remote repository
+git remote add origin https://github.com/senjumomo/quizzlet.git
 
 # Push to GitHub
 git push -u origin main
 ```
 
 ### 3. Turn on GitHub Pages
-1. Go to your repository on GitHub.
+1. Go to your repository at [github.com/senjumomo/quizzlet](https://github.com/senjumomo/quizzlet).
 2. Click **Settings** (top navigation tab).
 3. In the left sidebar, click **Pages** (under the "Code and automation" section).
 4. Under **Build and deployment**:
@@ -85,7 +87,7 @@ git push -u origin main
 
 After 1–2 minutes, GitHub will publish your site at:
 ```
-https://<YOUR-USERNAME>.github.io/<YOUR-REPO>/
+https://senjumomo.github.io/quizzlet/
 ```
 
 ---
