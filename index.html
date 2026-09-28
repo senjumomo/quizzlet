@@ -2,675 +2,1136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="QuizPulse — Live trivia quiz engine powered directly by Google Sheets. Play across multiple categories and track your streaks!">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><circle cx='12' cy='12' r='10'/></svg>">
-  <title>QuizPulse — Google Sheet Trivia Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#07090e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="QuizPulse — Fast, mobile-first trivia powered live by Google Sheets.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>">
+  <title>QuizPulse — Live Google Sheet Trivia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: rgba(22, 30, 49, 0.75);
+      --bg: #07090e;
+      --card-bg: rgba(18, 24, 38, 0.78);
       --card-border: rgba(255, 255, 255, 0.08);
+      --card-highlight: rgba(255, 255, 255, 0.03);
+      --primary: #6366f1;
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      --accent: #06b6d4;
+      --success: #10b981;
+      --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --error: #f43f5e;
+      --error-gradient: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      --amber: #f59e0b;
       --text: #f8fafc;
       --text-muted: #94a3b8;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --accent: #10b981;
-      --success: #10b981;
-      --success-glow: rgba(16, 185, 129, 0.25);
-      --error: #f43f5e;
-      --error-glow: rgba(244, 63, 94, 0.25);
-      --radius-lg: 24px;
+      --text-dim: #64748b;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
       --radius-md: 14px;
-      --radius-sm: 8px;
+      --radius-sm: 10px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
+      justify-content: flex-start;
       position: relative;
       overflow-x: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
     }
 
-    .bg-glow-1 {
+    /* Ambient dynamic glows */
+    .glow-blob {
       position: fixed;
-      top: -15%;
-      left: 10%;
-      width: 480px;
-      height: 480px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
       border-radius: 50%;
-      z-index: 0;
+      filter: blur(80px);
       pointer-events: none;
-      filter: blur(40px);
+      z-index: 0;
+      opacity: 0.45;
+    }
+    .glow-1 {
+      top: -100px;
+      left: -80px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+    }
+    .glow-2 {
+      bottom: -80px;
+      right: -80px;
+      width: 340px;
+      height: 340px;
+      background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+    }
+    .glow-3 {
+      top: 40%;
+      right: -120px;
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+      opacity: 0.25;
     }
 
-    .bg-glow-2 {
+    /* Confetti Canvas */
+    #confetti-canvas {
       position: fixed;
-      bottom: -15%;
-      right: 10%;
-      width: 520px;
-      height: 520px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
-      border-radius: 50%;
-      z-index: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
-      filter: blur(50px);
+      z-index: 99;
     }
 
-    .app-card {
+    /* Mobile Container Shell */
+    .app-shell {
       position: relative;
       z-index: 1;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg);
-      padding: 36px 32px;
-      max-width: 660px;
       width: 100%;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+      max-width: 480px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px 24px;
     }
 
-    .app-brand {
+    /* Header Bar */
+    .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 24px;
+      padding: 8px 0 16px;
+      margin-bottom: 8px;
     }
 
-    .brand-title {
+    .brand-logo {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #ffffff;
+    }
+
+    .brand-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
       font-weight: 800;
       letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #c7d2fe, #e0e7ff 40%, #10b981);
+      line-height: 1.1;
+      background: linear-gradient(135deg, #ffffff 40%, #c7d2fe);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .header-actions {
+    .brand-text span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .header-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .sheet-link-btn {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #6ee7b7;
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-
-    .sheet-link-btn:hover {
-      background: rgba(16, 185, 129, 0.25);
-    }
-
-    .audio-toggle-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
+    .icon-btn {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      width: 38px;
-      height: 38px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .audio-toggle-btn:hover {
+    .icon-btn:active {
+      transform: scale(0.92);
       background: rgba(255, 255, 255, 0.1);
       color: var(--text);
     }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
+    .icon-btn.sheet-btn {
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
     }
 
-    @media (max-width: 580px) {
-      .form-grid { grid-template-columns: 1fr; }
-      .app-card { padding: 24px 20px; }
-    }
-
-    .form-group {
+    /* Views Framework */
+    .view-screen {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      flex: 1;
+      width: 100%;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .form-group.full-width {
-      grid-column: 1 / -1;
+    .hidden {
+      display: none !important;
     }
 
-    label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ========================================================
+       1. SETUP SCREEN (Mobile Optimized)
+       ======================================================== */
+    .setup-hero {
+      text-align: left;
+      margin: 12px 0 20px;
+    }
+
+    .setup-hero h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .setup-hero p {
+      font-size: 0.88rem;
       color: var(--text-muted);
     }
 
-    select, input[type="number"] {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(10, 15, 29, 0.8);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius-md);
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
-      transition: all 0.2s ease;
+    .db-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6ee7b7;
     }
 
-    select:focus, input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin: 16px 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title span.count-info {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: none;
+      font-weight: 600;
+    }
+
+    /* Segmented pill selectors */
+    .pill-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 5px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--card-border);
+    }
+
+    .pill-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 10px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pill-btn.active {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .pill-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Category Cards Grid */
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .category-chip {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .category-chip:active {
+      transform: scale(0.97);
+    }
+
+    .category-chip.active {
+      border-color: #8b5cf6;
+      background: rgba(99, 102, 241, 0.16);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.25), inset 0 0 10px rgba(99, 102, 241, 0.1);
+    }
+
+    .category-chip.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-gradient);
+    }
+
+    .cat-emoji {
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+
+    .cat-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Subcategory horizontal scroll pills */
+    .subcategories-container {
+      margin-top: 10px;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    .subcat-scroller {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .subcat-scroller::-webkit-scrollbar {
+      display: none;
+    }
+
+    .subcat-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .subcat-pill.active {
+      background: rgba(6, 182, 212, 0.2);
+      border-color: rgba(6, 182, 212, 0.4);
+      color: #67e8f9;
+    }
+
+    /* Bottom Pinned Primary CTA */
+    .bottom-cta-wrap {
+      margin-top: auto;
+      padding-top: 24px;
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg) 80%, transparent 100%);
+      padding-bottom: calc(var(--safe-bottom) + 8px);
+      z-index: 10;
     }
 
     .primary-btn {
       width: 100%;
-      padding: 14px 24px;
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
-      color: white;
       border: none;
-      border-radius: var(--radius-md);
-      font-size: 1rem;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
       font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 16px 20px;
+      border-radius: var(--radius-lg);
       cursor: pointer;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .primary-btn:hover {
-      background: linear-gradient(135deg, #7175f7, #5950ee);
-      transform: translateY(-1px);
+    .primary-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
     }
 
-    .quiz-meta-bar {
+    .primary-btn svg {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.2s;
+    }
+
+    .primary-btn:hover svg {
+      transform: translateX(3px);
+    }
+
+    /* ========================================================
+       2. LOADING SCREEN
+       ======================================================== */
+    .loading-container {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .loading-pulse-ring {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top-color: var(--primary);
+      border-right-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-container h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .loading-container p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      max-width: 280px;
+    }
+
+    /* ========================================================
+       3. QUIZ GAMEPLAY SCREEN (Mobile Ergonomics)
+       ======================================================== */
+    .quiz-hud {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
-    .meta-left {
+    .meta-badges {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
 
-    .tag {
-      padding: 4px 10px;
-      border-radius: 20px;
+    .tag-pill {
       font-size: 0.72rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.02em;
     }
 
-    .tag-category {
+    .tag-cat {
       background: rgba(99, 102, 241, 0.15);
       border: 1px solid rgba(99, 102, 241, 0.3);
       color: #a5b4fc;
     }
 
-    .tag-subcategory {
-      background: rgba(56, 189, 248, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: #7dd3fc;
+    .tag-subcat {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #67e8f9;
     }
 
-    .tag-source {
+    .tag-diff {
+      text-transform: capitalize;
+    }
+    .tag-diff.easy {
       background: rgba(16, 185, 129, 0.15);
       border: 1px solid rgba(16, 185, 129, 0.3);
       color: #6ee7b7;
     }
-
-    .tag-difficulty.easy {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #6ee7b7;
-    }
-
-    .tag-difficulty.medium {
+    .tag-diff.medium {
       background: rgba(245, 158, 11, 0.15);
       border: 1px solid rgba(245, 158, 11, 0.3);
       color: #fcd34d;
     }
-
-    .tag-difficulty.hard {
+    .tag-diff.hard {
       background: rgba(244, 63, 94, 0.15);
       border: 1px solid rgba(244, 63, 94, 0.3);
       color: #fda4af;
     }
 
-    .streak-badge {
-      display: inline-flex;
+    .streak-meter {
+      display: flex;
       align-items: center;
       gap: 4px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
       font-size: 0.85rem;
-      font-weight: 700;
-      color: #fb923c;
-      background: rgba(251, 146, 60, 0.12);
-      padding: 4px 10px;
+      color: var(--amber);
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
       border-radius: 20px;
-      border: 1px solid rgba(251, 146, 60, 0.3);
+      padding: 3px 10px;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    .progress-track {
+    .streak-meter.pop {
+      transform: scale(1.2);
+    }
+
+    /* Progress bar */
+    .progress-bar-wrap {
       width: 100%;
-      height: 8px;
+      height: 6px;
       background: rgba(255, 255, 255, 0.06);
-      border-radius: 999px;
+      border-radius: 10px;
       overflow: hidden;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
-    .progress-fill {
+    .progress-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, #6366f1, #10b981);
       width: 0%;
-      border-radius: 999px;
-      transition: width 0.4s ease;
+      background: var(--primary-gradient);
+      border-radius: 10px;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .question-title {
-      font-size: 1.28rem;
+    /* Question Card */
+    .question-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 24px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .q-step-label {
+      font-size: 0.75rem;
       font-weight: 700;
-      line-height: 1.45;
-      color: var(--text);
-      margin-bottom: 24px;
-      min-height: 56px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 8px;
     }
 
-    .options-list {
+    .q-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    /* Options Stack */
+    .options-stack {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
-    .option-card {
-      background: rgba(15, 23, 42, 0.65);
+    .opt-card {
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--card-border);
-      border-radius: var(--radius-md);
-      padding: 14px 18px;
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
       display: flex;
       align-items: center;
       gap: 14px;
       cursor: pointer;
+      text-align: left;
+      font-family: inherit;
       color: var(--text);
-      font-size: 0.98rem;
+      min-height: 60px;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
     }
 
-    .option-card:hover:not(:disabled) {
-      background: rgba(99, 102, 241, 0.1);
-      border-color: rgba(99, 102, 241, 0.4);
-      transform: translateX(4px);
+    .opt-card:active:not(:disabled) {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.08);
     }
 
-    .option-key {
+    .opt-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
-      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
       font-size: 0.85rem;
-      flex-shrink: 0;
-    }
-
-    .option-card:hover:not(:disabled) .option-key {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: white;
-    }
-
-    .option-card.correct {
-      background: var(--success-glow) !important;
-      border-color: var(--success) !important;
-      color: #a7f3d0 !important;
-    }
-
-    .option-card.correct .option-key {
-      background: var(--success) !important;
-      color: #064e3b !important;
-    }
-
-    .option-card.wrong {
-      background: var(--error-glow) !important;
-      border-color: var(--error) !important;
-      color: #fecdd3 !important;
-    }
-
-    .option-card.wrong .option-key {
-      background: var(--error) !important;
-      color: #881337 !important;
-    }
-
-    .next-action {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .q-counter {
-      font-size: 0.88rem;
       color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .opt-text {
+      font-size: 0.95rem;
       font-weight: 600;
+      line-height: 1.35;
+      flex: 1;
     }
 
-    .result-box {
+    /* States */
+    .opt-card.correct {
+      background: rgba(16, 185, 129, 0.18) !important;
+      border-color: #10b981 !important;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.35);
+    }
+
+    .opt-card.correct .opt-badge {
+      background: #10b981;
+      border-color: #10b981;
+      color: #ffffff;
+    }
+
+    .opt-card.wrong {
+      background: rgba(244, 63, 94, 0.18) !important;
+      border-color: #f43f5e !important;
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    .opt-card.wrong .opt-badge {
+      background: #f43f5e;
+      border-color: #f43f5e;
+      color: #ffffff;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translateX(-2px); }
+      20%, 80% { transform: translateX(3px); }
+      30%, 50%, 70% { transform: translateX(-4px); }
+      40%, 60% { transform: translateX(4px); }
+    }
+
+    .opt-card:disabled {
+      cursor: default;
+    }
+
+    /* Next Floating Button */
+    .next-wrap {
+      margin-top: auto;
+      padding-top: 16px;
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: sticky;
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg) 80%, transparent 100%);
+      padding-bottom: calc(var(--safe-bottom) + 8px);
+      z-index: 10;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========================================================
+       4. RESULTS SCREEN (Score Gauge & Sharing)
+       ======================================================== */
+    .results-shell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      padding: 12px 0;
+      padding: 10px 0 20px;
+      flex: 1;
     }
 
-    .score-badge-circle {
-      width: 140px;
-      height: 140px;
-      margin: 0 auto 20px;
+    /* Animated Radial Gauge */
+    .gauge-wrap {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin: 10px 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 10;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke: url(#scoreGrad);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .gauge-content {
+      position: absolute;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 70%);
-      border: 3px solid rgba(16, 185, 129, 0.4);
-      box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
     }
 
-    .score-huge {
-      font-size: 2.4rem;
+    .gauge-score {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.6rem;
       font-weight: 800;
-      color: white;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #ffffff;
     }
 
-    .score-sub {
+    .gauge-sub {
       font-size: 0.75rem;
       font-weight: 700;
+      color: var(--text-muted);
       text-transform: uppercase;
-      color: var(--text-muted);
+      margin-top: 4px;
     }
 
-    .result-headline {
-      font-size: 1.5rem;
+    .results-headline {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
       font-weight: 800;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
-    .result-subhead {
+    .results-subhead {
+      font-size: 0.9rem;
       color: var(--text-muted);
-      margin-bottom: 28px;
-      font-size: 0.95rem;
+      margin-bottom: 24px;
+      max-width: 320px;
     }
 
-    .stats-row {
+    /* Stats Grid */
+    .stats-trio {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 28px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 24px;
     }
 
-    .stat-card {
-      background: rgba(15, 23, 42, 0.5);
+    .stat-pill-box {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--card-border);
       border-radius: var(--radius-md);
-      padding: 12px 8px;
+      padding: 14px 8px;
     }
 
-    .stat-val {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent);
+    .stat-metric {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
       margin-bottom: 4px;
     }
 
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+    .stat-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-dim);
       text-transform: uppercase;
-      font-weight: 600;
+      letter-spacing: 0.05em;
     }
 
-    #confetti-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 999;
+    .actions-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      margin-top: auto;
+      padding-top: 10px;
     }
 
-    .hidden { display: none !important; }
-
-    .spinner {
-      width: 44px;
-      height: 44px;
-      border: 4px solid rgba(255, 255, 255, 0.08);
-      border-left-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 40px auto 20px;
+    .secondary-btn {
+      width: 100%;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 14px 20px;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .secondary-btn:active {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 <body>
 
-  <div class="bg-glow-1"></div>
-  <div class="bg-glow-2"></div>
+  <!-- Ambient Glows -->
+  <div class="glow-blob glow-1"></div>
+  <div class="glow-blob glow-2"></div>
+  <div class="glow-blob glow-3"></div>
+
+  <!-- Confetti Canvas -->
   <canvas id="confetti-canvas"></canvas>
 
-  <div class="app-card">
-    <div class="app-brand">
-      <div class="brand-title">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        </svg>
-        <span>QuizPulse</span>
-      </div>
-      <div class="header-actions">
-        <a href="https://docs.google.com/spreadsheets/d/1o3kNHih-35T5-ssvNaJ9i4TAs38zSQHKyhBqTZ9AYX4/edit" target="_blank" rel="noopener noreferrer" class="sheet-link-btn" title="Open Google Sheet in Drive">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+  <div class="app-shell">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <a href="index.html" class="brand-logo" title="QuizPulse">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>QuizPulse</h1>
+          <span>Sheet Engine</span>
+        </div>
+      </a>
+
+      <div class="header-controls">
+        <a href="https://docs.google.com/spreadsheets/d/1o3kNHih-35T5-ssvNaJ9i4TAs38zSQHKyhBqTZ9AYX4/edit" target="_blank" rel="noopener noreferrer" class="icon-btn sheet-btn" title="View Google Sheet Database">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm4-4H6v-2h10v2zm0-4H6V7h10v2z"/>
           </svg>
-          <span>Edit Sheet DB</span>
         </a>
-        <button id="sound-toggle" class="audio-toggle-btn" title="Toggle Sound FX">
-          <svg id="sound-on-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+        <button id="sound-btn" class="icon-btn" title="Toggle Sound FX">
+          <svg id="sound-on-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
           </svg>
-          <svg id="sound-off-icon" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg id="sound-off-svg" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <line x1="23" y1="9" x2="17" y2="15"></line>
             <line x1="17" y1="9" x2="23" y2="15"></line>
           </svg>
         </button>
       </div>
-    </div>
+    </header>
 
-    <!-- 1. Setup / Config -->
-    <div id="setup-view">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="num-questions">Questions</label>
-          <input type="number" id="num-questions" min="1" max="50" value="10">
-        </div>
-
-        <div class="form-group">
-          <label for="difficulty">Difficulty</label>
-          <select id="difficulty">
-            <option value="">Any Level</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="category">Category</label>
-          <select id="category">
-            <option value="">Any Category</option>
-            <option value="Mythology" selected>Mythology</option>
-            <option value="Science">Science</option>
-            <option value="History">History</option>
-            <option value="General Knowledge">General Knowledge</option>
-            <option value="Entertainment">Entertainment</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="subcategory">Subcategory</label>
-          <select id="subcategory">
-            <option value="">Any Subcategory</option>
-            <option value="Greek">Greek</option>
-            <option value="Norse">Norse</option>
-            <option value="Egyptian">Egyptian</option>
-            <option value="Roman">Roman</option>
-            <option value="Japanese">Japanese</option>
-            <option value="Hindu">Hindu</option>
-            <option value="Celtic">Celtic</option>
-            <option value="Aztec">Aztec</option>
-            <option value="Mesopotamian">Mesopotamian</option>
-            <option value="Chinese">Chinese</option>
-            <option value="Polynesian">Polynesian</option>
-            <option value="Slavic">Slavic</option>
-            <option value="Finnish">Finnish</option>
-            <option value="Arthurian">Arthurian</option>
-          </select>
+    <!-- SCREEN 1: SETUP -->
+    <main id="setup-screen" class="view-screen">
+      <div class="setup-hero">
+        <h2>Challenge Your Brain</h2>
+        <p>Real-time trivia pulled straight from your Google Sheet.</p>
+        <div class="db-status-pill">
+          <div class="status-dot"></div>
+          <span id="sheet-status-text">Connected to Sheet Database</span>
         </div>
       </div>
 
-      <button id="start-btn" class="primary-btn">
-        <span>Start Challenge</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-          <polyline points="12 5 19 12 12 19"></polyline>
-        </svg>
-      </button>
-    </div>
+      <!-- Question Count Pill Group -->
+      <div class="section-title">
+        <span>Question Count</span>
+      </div>
+      <div class="pill-group" id="count-selector">
+        <button class="pill-btn" data-count="5">5</button>
+        <button class="pill-btn active" data-count="10">10</button>
+        <button class="pill-btn" data-count="15">15</button>
+        <button class="pill-btn" data-count="25">25</button>
+      </div>
 
-    <!-- 2. Loading State -->
-    <div id="loading-view" class="hidden">
-      <div class="spinner"></div>
-      <p id="loading-msg" style="text-align: center; color: var(--text-muted); font-size: 0.95rem;">Loading questions from your Google Sheet...</p>
-    </div>
+      <!-- Difficulty Selector -->
+      <div class="section-title">
+        <span>Difficulty</span>
+      </div>
+      <div class="pill-group" id="difficulty-selector">
+        <button class="pill-btn active" data-diff="">All</button>
+        <button class="pill-btn" data-diff="easy">Easy</button>
+        <button class="pill-btn" data-diff="medium">Med</button>
+        <button class="pill-btn" data-diff="hard">Hard</button>
+      </div>
 
-    <!-- 3. Quiz Gameplay -->
-    <div id="quiz-view" class="hidden">
-      <div class="quiz-meta-bar">
-        <div class="meta-left">
-          <span id="category-tag" class="tag tag-category">Mythology</span>
-          <span id="subcategory-tag" class="tag tag-subcategory">Greek</span>
-          <span class="tag tag-source">Google Sheet</span>
-          <span id="difficulty-tag" class="tag tag-difficulty easy">Easy</span>
+      <!-- Category Picker -->
+      <div class="section-title">
+        <span>Category</span>
+        <span class="count-info" id="category-badge-count">Auto Syncing...</span>
+      </div>
+      <div class="categories-grid" id="categories-grid">
+        <!-- Dynamic Category Chips populated via JS -->
+      </div>
+
+      <!-- Subcategory Horizontal Chips (Shows when category has subcategories) -->
+      <div id="subcat-container" class="subcategories-container hidden">
+        <div class="section-title" style="margin-top: 10px;">
+          <span>Subcategory</span>
         </div>
-        <div id="streak-indicator" class="streak-badge">
-          <span>🔥</span> <span id="streak-count">0</span>
+        <div class="subcat-scroller" id="subcat-scroller">
+          <!-- Populated dynamically -->
         </div>
       </div>
 
-      <div class="progress-track">
-        <div id="progress-fill" class="progress-fill"></div>
-      </div>
-
-      <h2 id="question-text" class="question-title"></h2>
-
-      <div id="options-container" class="options-list"></div>
-
-      <div class="next-action">
-        <span id="question-counter" class="q-counter">1 of 10</span>
-        <button id="next-btn" class="primary-btn hidden" style="width: auto; min-width: 140px; padding: 10px 20px;">
-          <span>Next</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <!-- Sticky Start Action -->
+      <div class="bottom-cta-wrap">
+        <button id="start-btn" class="primary-btn">
+          <span>Start Trivia</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
       </div>
-    </div>
+    </main>
 
-    <!-- 4. Results Screen -->
-    <div id="results-view" class="hidden">
-      <div class="result-box">
-        <div class="score-badge-circle">
-          <span id="final-score" class="score-huge">8</span>
-          <span class="score-sub">Total Correct</span>
-        </div>
-
-        <h3 id="result-title" class="result-headline">Outstanding!</h3>
-        <p id="result-desc" class="result-subhead">You mastered your Google Sheet trivia database.</p>
-
-        <div class="stats-row">
-          <div class="stat-card">
-            <div id="stat-accuracy" class="stat-val">80%</div>
-            <div class="stat-label">Accuracy</div>
-          </div>
-          <div class="stat-card">
-            <div id="stat-max-streak" class="stat-val">4</div>
-            <div class="stat-label">Best Streak</div>
-          </div>
-          <div class="stat-card">
-            <div id="stat-time" class="stat-val">42s</div>
-            <div class="stat-label">Total Time</div>
-          </div>
-        </div>
-
-        <button id="restart-btn" class="primary-btn">Play Another Round</button>
+    <!-- SCREEN 2: LOADING -->
+    <section id="loading-screen" class="view-screen hidden">
+      <div class="loading-container">
+        <div class="loading-pulse-ring"></div>
+        <h3>Fetching Questions</h3>
+        <p id="loading-status">Connecting to your Google Sheet database in real time...</p>
       </div>
-    </div>
+    </section>
+
+    <!-- SCREEN 3: GAMEPLAY -->
+    <section id="quiz-screen" class="view-screen hidden">
+      <div class="quiz-hud">
+        <div class="meta-badges">
+          <span id="hud-cat" class="tag-pill tag-cat">Mythology</span>
+          <span id="hud-subcat" class="tag-pill tag-subcat hidden">Greek</span>
+          <span id="hud-diff" class="tag-pill tag-diff easy">Easy</span>
+        </div>
+        <div id="hud-streak" class="streak-meter">
+          <span>🔥</span> <span id="streak-num">0</span>
+        </div>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="progress-bar-wrap">
+        <div id="progress-bar-fill" class="progress-bar-fill"></div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="question-card">
+        <div id="hud-counter" class="q-step-label">Question 1 of 10</div>
+        <h2 id="question-prompt" class="q-text">Loading question...</h2>
+      </div>
+
+      <!-- Answers Options Stack -->
+      <div id="options-stack" class="options-stack">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Bottom Next Floating Action -->
+      <div id="next-action-wrap" class="next-wrap hidden">
+        <button id="next-btn" class="primary-btn">
+          <span id="next-btn-text">Next Question</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: RESULTS -->
+    <section id="results-screen" class="view-screen hidden">
+      <div class="results-shell">
+        
+        <!-- Radial Score Meter -->
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 160 160">
+            <defs>
+              <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#06b6d4" />
+              </linearGradient>
+            </defs>
+            <circle class="gauge-bg" cx="80" cy="80" r="70" />
+            <circle id="gauge-circle" class="gauge-fill" cx="80" cy="80" r="70" />
+          </svg>
+          <div class="gauge-content">
+            <div id="res-score-number" class="gauge-score">0</div>
+            <div class="gauge-sub">Score</div>
+          </div>
+        </div>
+
+        <h3 id="res-title" class="results-headline">Outstanding!</h3>
+        <p id="res-desc" class="results-subhead">You completely dominated this trivia run.</p>
+
+        <!-- Stats Trio -->
+        <div class="stats-trio">
+          <div class="stat-pill-box">
+            <div id="stat-accuracy" class="stat-metric">0%</div>
+            <div class="stat-title">Accuracy</div>
+          </div>
+          <div class="stat-pill-box">
+            <div id="stat-best-streak" class="stat-metric">0</div>
+            <div class="stat-title">Streak 🔥</div>
+          </div>
+          <div class="stat-pill-box">
+            <div id="stat-time-taken" class="stat-metric">0s</div>
+            <div class="stat-title">Time</div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions-stack">
+          <button id="replay-btn" class="primary-btn">
+            <span>Play Another Round</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+          </button>
+
+          <button id="share-btn" class="secondary-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span id="share-btn-text">Share Score</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
   </div>
 
   <script>
-    // Hardcoded connection strictly to your Google Sheet database
+    // ========================================================
+    // CONFIGURATION & SOUND FX
+    // ========================================================
     const SPREADSHEET_ID = '1o3kNHih-35T5-ssvNaJ9i4TAs38zSQHKyhBqTZ9AYX4';
 
-    // Sound FX via Web Audio API
-    class SoundFX {
+    class SoundEngine {
       constructor() {
         this.ctx = null;
         this.enabled = true;
@@ -684,69 +1145,82 @@
       playCorrect() {
         if (!this.enabled) return;
         this.init();
-        const now = this.ctx.currentTime;
+        const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, now);
-        osc.frequency.setValueAtTime(880, now + 0.08);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
+        osc.frequency.setValueAtTime(523.25, t); // C5
+        osc.frequency.setValueAtTime(659.25, t + 0.08); // E5
+        osc.frequency.setValueAtTime(783.99, t + 0.16); // G5
+        gain.gain.setValueAtTime(0.18, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.start(t);
+        osc.stop(t + 0.35);
       }
       playWrong() {
         if (!this.enabled) return;
         this.init();
-        const now = this.ctx.currentTime;
+        const t = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.linearRampToValueAtTime(110, now + 0.2);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        osc.start(now);
-        osc.stop(now + 0.25);
+        osc.frequency.setValueAtTime(160, t);
+        osc.frequency.linearRampToValueAtTime(90, t + 0.2);
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.start(t);
+        osc.stop(t + 0.25);
       }
       playFinish() {
         if (!this.enabled) return;
         this.init();
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+        const chords = [523.25, 659.25, 783.99, 1046.50];
+        chords.forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.connect(gain);
           gain.connect(this.ctx.destination);
-          const now = this.ctx.currentTime + (idx * 0.1);
-          osc.frequency.setValueAtTime(freq, now);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-          osc.start(now);
-          osc.stop(now + 0.4);
+          const t = this.ctx.currentTime + (idx * 0.09);
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.14, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+          osc.start(t);
+          osc.stop(t + 0.45);
         });
       }
     }
 
-    const sfx = new SoundFX();
+    const sound = new SoundEngine();
+
+    // Haptics helper
+    function triggerHaptic(type) {
+      if (!('vibrate' in navigator)) return;
+      try {
+        if (type === 'tap') navigator.vibrate(25);
+        else if (type === 'correct') navigator.vibrate([30, 40, 30]);
+        else if (type === 'wrong') navigator.vibrate([70, 40, 70]);
+        else if (type === 'finish') navigator.vibrate([50, 50, 50, 50, 100]);
+      } catch (e) {}
+    }
 
     // Canvas Confetti
-    function launchConfetti() {
+    function fireConfetti() {
       const canvas = document.getElementById('confetti-canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
 
-      const particles = Array.from({ length: 90 }).map(() => ({
+      const particles = Array.from({ length: 80 }).map(() => ({
         x: canvas.width / 2,
-        y: canvas.height * 0.45,
+        y: canvas.height * 0.4,
         r: Math.random() * 5 + 3,
-        color: ['#6366f1', '#10b981', '#38bdf8', '#f59e0b', '#ec4899'][Math.floor(Math.random() * 5)],
-        vx: (Math.random() - 0.5) * 14,
-        vy: (Math.random() - 0.5) * 14 - 3,
+        color: ['#6366f1', '#10b981', '#06b6d4', '#f59e0b', '#ec4899'][Math.floor(Math.random() * 5)],
+        vx: (Math.random() - 0.5) * 12,
+        vy: (Math.random() - 0.5) * 12 - 3,
         gravity: 0.35,
         friction: 0.96
       }));
@@ -766,74 +1240,49 @@
           ctx.fill();
         });
         frame++;
-        if (frame < 120) requestAnimationFrame(animate);
+        if (frame < 110) requestAnimationFrame(animate);
         else ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
       animate();
     }
 
-    let questions = [];
-    let currentIndex = 0;
-    let score = 0;
-    let currentStreak = 0;
-    let maxStreak = 0;
-    let startTime = null;
-    let hasAnswered = false;
+    // Category emoji mapping
+    const CATEGORY_EMOJIS = {
+      'mythology': '⚡',
+      'science': '🔬',
+      'history': '🏛️',
+      'general knowledge': '💡',
+      'entertainment': '🎬',
+      'video games': '🎮',
+      'series': '📺',
+      'cryptids': '👾'
+    };
 
-    const setupView = document.getElementById('setup-view');
-    const loadingView = document.getElementById('loading-view');
-    const loadingMsg = document.getElementById('loading-msg');
-    const quizView = document.getElementById('quiz-view');
-    const resultsView = document.getElementById('results-view');
-
-    const startBtn = document.getElementById('start-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const restartBtn = document.getElementById('restart-btn');
-    const soundToggle = document.getElementById('sound-toggle');
-    const soundOnIcon = document.getElementById('sound-on-icon');
-    const soundOffIcon = document.getElementById('sound-off-icon');
-
-    const progressFill = document.getElementById('progress-fill');
-    const questionText = document.getElementById('question-text');
-    const optionsContainer = document.getElementById('options-container');
-    const categoryTag = document.getElementById('category-tag');
-    const subcategoryTag = document.getElementById('subcategory-tag');
-    const difficultyTag = document.getElementById('difficulty-tag');
-    const streakIndicator = document.getElementById('streak-indicator');
-    const streakCount = document.getElementById('streak-count');
-    const questionCounter = document.getElementById('question-counter');
-
-    function shuffle(arr) {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
+    function getCategoryEmoji(catName) {
+      const lower = catName.toLowerCase().trim();
+      return CATEGORY_EMOJIS[lower] || '🎯';
     }
 
-    soundToggle.addEventListener('click', () => {
-      sfx.enabled = !sfx.enabled;
-      soundOnIcon.classList.toggle('hidden', !sfx.enabled);
-      soundOffIcon.classList.toggle('hidden', sfx.enabled);
-    });
+    // ========================================================
+    // JSONP GOOGLE SHEETS FETCHER
+    // ========================================================
+    let cachedTable = null;
 
-    // ========================================================
-    // JSONP GOOGLE SHEETS FETCHER (Bypasses all CORS on Android)
-    // ========================================================
-    function loadGoogleSheetViaJSONP(sheetId) {
+    function fetchGoogleSheetJSONP(sheetId) {
+      if (cachedTable) return Promise.resolve(cachedTable);
+
       return new Promise((resolve, reject) => {
-        const scriptId = 'gviz_script_' + Date.now();
-
+        const scriptId = 'gviz_fetcher_' + Date.now();
         window.google = window.google || {};
         window.google.visualization = window.google.visualization || {};
         window.google.visualization.Query = {
-          setResponse: function(response) {
+          setResponse: function(res) {
             cleanup();
-            if (response && response.status === 'ok' && response.table && response.table.rows) {
-              resolve(response.table);
+            if (res && res.status === 'ok' && res.table && res.table.rows) {
+              cachedTable = res.table;
+              resolve(res.table);
             } else {
-              reject(new Error(response?.errors ? response.errors[0]?.message : 'Could not read table data from Google Sheet.'));
+              reject(new Error(res?.errors ? res.errors[0]?.message : 'Could not read Google Sheet data.'));
             }
           }
         };
@@ -842,13 +1291,13 @@
         script.id = scriptId;
         script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?headers=1&t=${Date.now()}`;
 
-        const timer = setTimeout(() => {
+        const timeout = setTimeout(() => {
           cleanup();
-          reject(new Error('Connection timed out. Ensure your Google Sheet is shared with "Anyone with the link can view".'));
+          reject(new Error('Connection timed out. Check that your Google Sheet has view permissions.'));
         }, 9000);
 
         function cleanup() {
-          clearTimeout(timer);
+          clearTimeout(timeout);
           const el = document.getElementById(scriptId);
           if (el) el.remove();
         }
@@ -862,102 +1311,236 @@
       });
     }
 
-    // Map to hold categories and their subcategories
-    let categorySubcategoryMap = {};
+    // ========================================================
+    // STATE & DOM ELEMENTS
+    // ========================================================
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let currentStreak = 0;
+    let maxStreak = 0;
+    let startTime = null;
+    let hasAnswered = false;
 
-    function updateSubcategoryDropdown() {
-      const catSelect = document.getElementById('category');
-      const subcatSelect = document.getElementById('subcategory');
-      const selectedCat = catSelect.value;
-      const currentVal = subcatSelect.value;
+    // Filters
+    let selectedAmount = 10;
+    let selectedDifficulty = '';
+    let selectedCategory = '';
+    let selectedSubcategory = '';
 
-      subcatSelect.innerHTML = '<option value="">Any Subcategory</option>';
+    // Sheet metadata
+    let categoryMap = {}; // { 'Mythology': Set(['Greek', 'Norse']) }
 
-      let subcats = new Set();
-      if (selectedCat && categorySubcategoryMap[selectedCat]) {
-        categorySubcategoryMap[selectedCat].forEach(s => subcats.add(s));
-      } else if (!selectedCat) {
-        Object.values(categorySubcategoryMap).forEach(set => {
-          set.forEach(s => subcats.add(s));
-        });
-      }
+    // Screen elements
+    const setupScreen = document.getElementById('setup-screen');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingStatus = document.getElementById('loading-status');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultsScreen = document.getElementById('results-screen');
 
-      const sortedSubcats = Array.from(subcats).sort();
-      sortedSubcats.forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.textContent = sub;
-        if (sub === currentVal) opt.selected = true;
-        subcatSelect.appendChild(opt);
-      });
+    // Setup controls
+    const countSelector = document.getElementById('count-selector');
+    const diffSelector = document.getElementById('difficulty-selector');
+    const categoriesGrid = document.getElementById('categories-grid');
+    const subcatContainer = document.getElementById('subcat-container');
+    const subcatScroller = document.getElementById('subcat-scroller');
+    const startBtn = document.getElementById('start-btn');
+    const categoryBadgeCount = document.getElementById('category-badge-count');
 
-      subcatSelect.disabled = sortedSubcats.length === 0;
-    }
+    // Quiz HUD & gameplay elements
+    const hudCat = document.getElementById('hud-cat');
+    const hudSubcat = document.getElementById('hud-subcat');
+    const hudDiff = document.getElementById('hud-diff');
+    const hudStreak = document.getElementById('hud-streak');
+    const streakNum = document.getElementById('streak-num');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const hudCounter = document.getElementById('hud-counter');
+    const questionPrompt = document.getElementById('question-prompt');
+    const optionsStack = document.getElementById('options-stack');
+    const nextActionWrap = document.getElementById('next-action-wrap');
+    const nextBtn = document.getElementById('next-btn');
+    const nextBtnText = document.getElementById('next-btn-text');
 
-    document.getElementById('category').addEventListener('change', updateSubcategoryDropdown);
+    // Results elements
+    const gaugeCircle = document.getElementById('gauge-circle');
+    const resScoreNum = document.getElementById('res-score-number');
+    const resTitle = document.getElementById('res-title');
+    const resDesc = document.getElementById('res-desc');
+    const statAccuracy = document.getElementById('stat-accuracy');
+    const statBestStreak = document.getElementById('stat-best-streak');
+    const statTimeTaken = document.getElementById('stat-time-taken');
+    const replayBtn = document.getElementById('replay-btn');
+    const shareBtn = document.getElementById('share-btn');
+    const shareBtnText = document.getElementById('share-btn-text');
 
-    // Auto-discover unique categories and subcategories from Google Sheet on page load
-    async function syncCategoriesFromSheet() {
+    // Audio button
+    const soundBtn = document.getElementById('sound-btn');
+    const soundOnSvg = document.getElementById('sound-on-svg');
+    const soundOffSvg = document.getElementById('sound-off-svg');
+
+    soundBtn.addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      soundOnSvg.classList.toggle('hidden', !sound.enabled);
+      soundOffSvg.classList.toggle('hidden', sound.enabled);
+      triggerHaptic('tap');
+    });
+
+    // ========================================================
+    // SETUP VIEW LOGIC
+    // ========================================================
+
+    // Question count selection
+    countSelector.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill-btn');
+      if (!btn) return;
+      countSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedAmount = parseInt(btn.dataset.count, 10);
+      triggerHaptic('tap');
+    });
+
+    // Difficulty selection
+    diffSelector.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill-btn');
+      if (!btn) return;
+      diffSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedDifficulty = btn.dataset.diff;
+      triggerHaptic('tap');
+    });
+
+    // Sync categories & subcategories from Google Sheet
+    async function loadSheetMetadata() {
       try {
-        const table = await loadGoogleSheetViaJSONP(SPREADSHEET_ID);
-        if (table?.rows?.length > 0) {
-          categorySubcategoryMap = {};
+        const table = await fetchGoogleSheetJSONP(SPREADSHEET_ID);
+        if (table && table.rows) {
+          categoryMap = {};
+          let totalQuestions = 0;
+
           table.rows.forEach(r => {
             const cat = r.c && r.c[0] && r.c[0].v != null ? String(r.c[0].v).trim() : '';
             const sub = r.c && r.c[1] && r.c[1].v != null ? String(r.c[1].v).trim() : '';
             if (cat) {
-              if (!categorySubcategoryMap[cat]) {
-                categorySubcategoryMap[cat] = new Set();
-              }
+              totalQuestions++;
+              if (!categoryMap[cat]) categoryMap[cat] = new Set();
               if (sub && sub.toLowerCase() !== 'general') {
-                categorySubcategoryMap[cat].add(sub);
+                categoryMap[cat].add(sub);
               }
             }
           });
 
-          const categories = Object.keys(categorySubcategoryMap).sort();
-          if (categories.length > 0) {
-            const select = document.getElementById('category');
-            select.innerHTML = '<option value="">Any Category</option>';
-            categories.forEach(cat => {
-              const opt = document.createElement('option');
-              opt.value = cat;
-              opt.textContent = cat;
-              if (cat.toLowerCase() === 'mythology') opt.selected = true;
-              select.appendChild(opt);
-            });
-            updateSubcategoryDropdown();
-          }
+          renderCategoryGrid();
+          categoryBadgeCount.textContent = `${totalQuestions} Questions`;
         }
-      } catch (e) {
-        console.warn('Initial category sync using defaults:', e);
+      } catch (err) {
+        console.warn('Initial sheet sync notice:', err);
+        categoryBadgeCount.textContent = 'Live DB Connected';
       }
     }
-    syncCategoriesFromSheet();
 
-    // Query questions strictly from your Google Sheet
-    async function startQuiz() {
-      const requestedAmount = parseInt(document.getElementById('num-questions').value, 10) || 10;
-      const categoryFilter = document.getElementById('category').value;
-      const subcategoryFilter = document.getElementById('subcategory').value;
-      const difficultyFilter = document.getElementById('difficulty').value;
+    function renderCategoryGrid() {
+      categoriesGrid.innerHTML = '';
 
-      setupView.classList.add('hidden');
-      loadingView.classList.remove('hidden');
-      loadingMsg.textContent = 'Fetching questions directly from your Google Sheet...';
+      // "All Categories" chip
+      const allChip = document.createElement('div');
+      allChip.className = 'category-chip active';
+      allChip.dataset.cat = '';
+      allChip.innerHTML = `
+        <div class="cat-emoji">🌟</div>
+        <div class="cat-name">Any Category</div>
+      `;
+      allChip.addEventListener('click', () => selectCategory(''));
+      categoriesGrid.appendChild(allChip);
+
+      // Unique categories from sheet
+      const cats = Object.keys(categoryMap).sort();
+      cats.forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = 'category-chip';
+        chip.dataset.cat = cat;
+        chip.innerHTML = `
+          <div class="cat-emoji">${getCategoryEmoji(cat)}</div>
+          <div class="cat-name">${cat}</div>
+        `;
+        chip.addEventListener('click', () => selectCategory(cat));
+        categoriesGrid.appendChild(chip);
+      });
+    }
+
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      selectedSubcategory = '';
+      triggerHaptic('tap');
+
+      // Update active states
+      categoriesGrid.querySelectorAll('.category-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.cat === cat);
+      });
+
+      // Populate subcategories if available
+      if (cat && categoryMap[cat] && categoryMap[cat].size > 0) {
+        subcatScroller.innerHTML = '';
+
+        const allSub = document.createElement('button');
+        allSub.className = 'subcat-pill active';
+        allSub.textContent = 'All Subcategories';
+        allSub.addEventListener('click', () => selectSubcategory(''));
+        subcatScroller.appendChild(allSub);
+
+        Array.from(categoryMap[cat]).sort().forEach(sub => {
+          const pill = document.createElement('button');
+          pill.className = 'subcat-pill';
+          pill.textContent = sub;
+          pill.addEventListener('click', () => selectSubcategory(sub));
+          subcatScroller.appendChild(pill);
+        });
+
+        subcatContainer.classList.remove('hidden');
+      } else {
+        subcatContainer.classList.add('hidden');
+      }
+    }
+
+    function selectSubcategory(sub) {
+      selectedSubcategory = sub;
+      triggerHaptic('tap');
+      subcatScroller.querySelectorAll('.subcat-pill').forEach(pill => {
+        pill.classList.toggle('active', (pill.textContent === sub) || (!sub && pill.textContent === 'All Subcategories'));
+      });
+    }
+
+    // ========================================================
+    // GAMEPLAY LOGIC
+    // ========================================================
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    startBtn.addEventListener('click', startTrivia);
+
+    async function startTrivia() {
+      triggerHaptic('tap');
+      setupScreen.classList.add('hidden');
+      loadingScreen.classList.remove('hidden');
+      loadingStatus.textContent = 'Preparing your trivia challenge...';
 
       try {
-        const table = await loadGoogleSheetViaJSONP(SPREADSHEET_ID);
+        const table = await fetchGoogleSheetJSONP(SPREADSHEET_ID);
         if (!table.rows || table.rows.length === 0) {
           throw new Error('Your Google Sheet appears to be empty.');
         }
 
-        // Parse rows: [Category, Subcategory, Difficulty, Question, Correct Answer, Incorrect 1, Incorrect 2, Incorrect 3]
-        let allQuestions = table.rows.map(row => {
+        // Parse rows
+        let pool = table.rows.map(row => {
           const c = row.c || [];
           return {
-            category: c[0] && c[0].v != null ? String(c[0].v).trim() : 'General Knowledge',
-            subcategory: c[1] && c[1].v != null ? String(c[1].v).trim() : 'General',
+            category: c[0] && c[0].v != null ? String(c[0].v).trim() : 'General',
+            subcategory: c[1] && c[1].v != null ? String(c[1].v).trim() : '',
             difficulty: c[2] && c[2].v != null ? String(c[2].v).toLowerCase().trim() : 'medium',
             question: c[3] && c[3].v != null ? String(c[3].v).trim() : '',
             correct_answer: c[4] && c[4].v != null ? String(c[4].v).trim() : '',
@@ -967,182 +1550,220 @@
           };
         }).filter(q => q.question && q.correct_answer && q.incorrect_answers.length > 0);
 
-        // Apply Category Filter
-        if (categoryFilter && categoryFilter.trim() !== '') {
-          const target = categoryFilter.toLowerCase();
-          allQuestions = allQuestions.filter(q => q.category.toLowerCase().includes(target) || target.includes(q.category.toLowerCase()));
+        // Filter Category
+        if (selectedCategory) {
+          const target = selectedCategory.toLowerCase();
+          pool = pool.filter(q => q.category.toLowerCase().includes(target) || target.includes(q.category.toLowerCase()));
         }
 
-        // Apply Subcategory Filter
-        if (subcategoryFilter && subcategoryFilter.trim() !== '') {
-          const targetSub = subcategoryFilter.toLowerCase();
-          allQuestions = allQuestions.filter(q => q.subcategory && q.subcategory.toLowerCase() === targetSub);
+        // Filter Subcategory
+        if (selectedSubcategory) {
+          const targetSub = selectedSubcategory.toLowerCase();
+          pool = pool.filter(q => q.subcategory && q.subcategory.toLowerCase() === targetSub);
         }
 
-        // Apply Difficulty Filter
-        if (difficultyFilter && difficultyFilter.trim() !== '') {
-          allQuestions = allQuestions.filter(q => q.difficulty === difficultyFilter.toLowerCase());
+        // Filter Difficulty
+        if (selectedDifficulty) {
+          pool = pool.filter(q => q.difficulty === selectedDifficulty.toLowerCase());
         }
 
-        if (allQuestions.length === 0) {
-          const filterDetails = [
-            categoryFilter || 'Any Category',
-            subcategoryFilter ? `Subcategory: ${subcategoryFilter}` : null,
-            `Difficulty: ${difficultyFilter || 'Any'}`
-          ].filter(Boolean).join(' | ');
-          throw new Error(`No questions found matching (${filterDetails}). Try different filters or add questions to your Google Sheet.`);
+        if (pool.length === 0) {
+          throw new Error('No questions found matching your chosen filters. Try another category or difficulty!');
         }
 
-        // Shuffle and slice requested amount
-        questions = shuffle(allQuestions).slice(0, requestedAmount);
+        questions = shuffleArray(pool).slice(0, selectedAmount);
         currentIndex = 0;
         score = 0;
         currentStreak = 0;
         maxStreak = 0;
         startTime = Date.now();
 
-        loadingView.classList.add('hidden');
-        quizView.classList.remove('hidden');
+        loadingScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
         renderQuestion();
       } catch (err) {
-        alert(err.message || 'Error reading from Google Sheet.');
-        loadingView.classList.add('hidden');
-        setupView.classList.remove('hidden');
+        alert(err.message || 'Error connecting to Google Sheet.');
+        loadingScreen.classList.add('hidden');
+        setupScreen.classList.remove('hidden');
       }
     }
 
     function renderQuestion() {
       hasAnswered = false;
-      nextBtn.classList.add('hidden');
+      nextActionWrap.classList.add('hidden');
 
       const q = questions[currentIndex];
-      questionText.textContent = q.question;
-      categoryTag.textContent = q.category;
 
+      // HUD Badges
+      hudCat.textContent = q.category;
       if (q.subcategory && q.subcategory.toLowerCase() !== 'general') {
-        subcategoryTag.textContent = q.subcategory;
-        subcategoryTag.style.display = 'inline-block';
+        hudSubcat.textContent = q.subcategory;
+        hudSubcat.classList.remove('hidden');
       } else {
-        subcategoryTag.style.display = 'none';
+        hudSubcat.classList.add('hidden');
       }
 
-      difficultyTag.textContent = q.difficulty;
-      difficultyTag.className = `tag tag-difficulty ${q.difficulty}`;
+      hudDiff.textContent = q.difficulty;
+      hudDiff.className = `tag-pill tag-diff ${q.difficulty}`;
 
-      questionCounter.textContent = `${currentIndex + 1} of ${questions.length}`;
-      progressFill.style.width = `${((currentIndex) / questions.length) * 100}%`;
-      streakCount.textContent = currentStreak;
+      streakNum.textContent = currentStreak;
+      hudCounter.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
 
-      optionsContainer.innerHTML = '';
-      const choices = shuffle([...q.incorrect_answers, q.correct_answer]);
-      const keyLabels = ['A', 'B', 'C', 'D'];
+      const progressPct = (currentIndex / questions.length) * 100;
+      progressBarFill.style.width = `${progressPct}%`;
+
+      questionPrompt.textContent = q.question;
+
+      // Render Options
+      optionsStack.innerHTML = '';
+      const choices = shuffleArray([...q.incorrect_answers, q.correct_answer]);
+      const letters = ['A', 'B', 'C', 'D'];
 
       choices.forEach((choice, idx) => {
-        const card = document.createElement('button');
-        card.className = 'option-card';
-        card.innerHTML = `
-          <span class="option-key">${keyLabels[idx] || (idx + 1)}</span>
-          <span class="option-text">${choice}</span>
+        const btn = document.createElement('button');
+        btn.className = 'opt-card';
+        btn.innerHTML = `
+          <div class="opt-badge">${letters[idx] || (idx + 1)}</div>
+          <div class="opt-text">${choice}</div>
         `;
-        card.addEventListener('click', () => selectAnswer(choice, q.correct_answer, card));
-        optionsContainer.appendChild(card);
+        btn.addEventListener('click', () => chooseAnswer(choice, q.correct_answer, btn));
+        optionsStack.appendChild(btn);
       });
     }
 
-    function selectAnswer(selected, correct, cardElement) {
+    function chooseAnswer(selected, correct, cardElement) {
       if (hasAnswered) return;
       hasAnswered = true;
 
-      const isCorrect = selected === correct;
+      const isCorrect = (selected === correct);
 
       if (isCorrect) {
         score++;
         currentStreak++;
         if (currentStreak > maxStreak) maxStreak = currentStreak;
         cardElement.classList.add('correct');
-        sfx.playCorrect();
+        sound.playCorrect();
+        triggerHaptic('correct');
 
-        streakIndicator.classList.add('pop');
-        setTimeout(() => streakIndicator.classList.remove('pop'), 200);
+        hudStreak.classList.add('pop');
+        setTimeout(() => hudStreak.classList.remove('pop'), 250);
       } else {
         currentStreak = 0;
         cardElement.classList.add('wrong');
-        sfx.playWrong();
+        sound.playWrong();
+        triggerHaptic('wrong');
 
-        Array.from(optionsContainer.children).forEach(btn => {
-          if (btn.querySelector('.option-text').textContent === correct) {
+        // Reveal the correct option
+        Array.from(optionsStack.children).forEach(btn => {
+          if (btn.querySelector('.opt-text').textContent === correct) {
             btn.classList.add('correct');
           }
         });
       }
 
-      streakCount.textContent = currentStreak;
-      Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+      streakNum.textContent = currentStreak;
+      Array.from(optionsStack.children).forEach(btn => btn.disabled = true);
 
-      nextBtn.classList.remove('hidden');
-      nextBtn.querySelector('span').textContent = (currentIndex + 1 < questions.length) ? 'Next' : 'Results';
+      // Show Next Floating Action
+      nextActionWrap.classList.remove('hidden');
+      nextBtnText.textContent = (currentIndex + 1 < questions.length) ? 'Next Question' : 'View Results';
     }
 
-    function handleNext() {
+    nextBtn.addEventListener('click', () => {
+      triggerHaptic('tap');
       currentIndex++;
       if (currentIndex < questions.length) {
         renderQuestion();
       } else {
         showResults();
       }
-    }
+    });
 
+    // ========================================================
+    // RESULTS VIEW & SHARING
+    // ========================================================
     function showResults() {
-      progressFill.style.width = '100%';
-      quizView.classList.add('hidden');
-      resultsView.classList.remove('hidden');
+      progressBarFill.style.width = '100%';
+      quizScreen.classList.add('hidden');
+      resultsScreen.classList.remove('hidden');
 
-      const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+      const totalTime = Math.round((Date.now() - startTime) / 1000);
       const accuracy = Math.round((score / questions.length) * 100);
 
-      document.getElementById('final-score').textContent = score;
-      document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
-      document.getElementById('stat-max-streak').textContent = maxStreak;
-      document.getElementById('stat-time').textContent = `${elapsedSec}s`;
+      // Gauge animation
+      resScoreNum.textContent = `${score}/${questions.length}`;
+      statAccuracy.textContent = `${accuracy}%`;
+      statBestStreak.textContent = `${maxStreak}`;
+      statTimeTaken.textContent = `${totalTime}s`;
 
-      const titleEl = document.getElementById('result-title');
-      const descEl = document.getElementById('result-desc');
+      // Animate SVG Radial Stroke (Circumference ~ 440)
+      const circumference = 2 * Math.PI * 70; // ~439.8
+      const offset = circumference - (accuracy / 100) * circumference;
+      setTimeout(() => {
+        gaugeCircle.style.strokeDashoffset = offset;
+      }, 100);
 
       if (accuracy >= 80) {
-        titleEl.textContent = accuracy === 100 ? 'Perfection!' : 'Mastermind!';
-        descEl.textContent = 'Outstanding accuracy on your Google Sheet questions.';
-        launchConfetti();
-        sfx.playFinish();
+        resTitle.textContent = accuracy === 100 ? 'Perfection! 🏆' : 'Mastermind! 🌟';
+        resDesc.textContent = 'Remarkable trivia mastery across your Google Sheet questions!';
+        fireConfetti();
+        sound.playFinish();
+        triggerHaptic('finish');
       } else if (accuracy >= 50) {
-        titleEl.textContent = 'Solid Run!';
-        descEl.textContent = 'Well done! Practice makes perfect.';
+        resTitle.textContent = 'Solid Run! 👍';
+        resDesc.textContent = 'Great effort! Practice makes perfect.';
       } else {
-        titleEl.textContent = 'Keep Training!';
-        descEl.textContent = 'Review your spreadsheet and try again.';
+        resTitle.textContent = 'Keep Training! 📚';
+        resDesc.textContent = 'Check your Google Sheet and come back stronger.';
       }
     }
 
-    window.addEventListener('keydown', (e) => {
-      if (quizView.classList.contains('hidden')) return;
+    replayBtn.addEventListener('click', () => {
+      triggerHaptic('tap');
+      resultsScreen.classList.add('hidden');
+      setupScreen.classList.remove('hidden');
+    });
 
-      const key = e.key.toUpperCase();
-      const keyMap = { 'A': 0, '1': 0, 'B': 1, '2': 1, 'C': 2, '3': 2, 'D': 3, '4': 3 };
+    // Native Web Share API
+    shareBtn.addEventListener('click', async () => {
+      triggerHaptic('tap');
+      const accuracy = Math.round((score / questions.length) * 100);
+      const shareData = {
+        title: 'QuizPulse — Trivia Challenge',
+        text: `I just scored ${score}/${questions.length} (${accuracy}%) on QuizPulse! Can you beat my streak of ${maxStreak}? 🔥`,
+        url: window.location.href
+      };
 
-      if (!hasAnswered && key in keyMap) {
-        const btn = optionsContainer.children[keyMap[key]];
-        if (btn) btn.click();
-      } else if (hasAnswered && (e.key === 'Enter' || e.key === ' ')) {
-        e.preventDefault();
-        handleNext();
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (e) {}
+      } else {
+        // Fallback copy to clipboard
+        navigator.clipboard.writeText(`${shareData.text} Play here: ${shareData.url}`).then(() => {
+          shareBtnText.textContent = 'Copied to Clipboard! ✓';
+          setTimeout(() => { shareBtnText.textContent = 'Share Score'; }, 2000);
+        });
       }
     });
 
-    startBtn.addEventListener('click', startQuiz);
-    nextBtn.addEventListener('click', handleNext);
-    restartBtn.addEventListener('click', () => {
-      resultsView.classList.add('hidden');
-      setupView.classList.remove('hidden');
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      if (quizScreen.classList.contains('hidden')) return;
+      const key = e.key.toUpperCase();
+      const map = { 'A': 0, '1': 0, 'B': 1, '2': 1, 'C': 2, '3': 2, 'D': 3, '4': 3 };
+
+      if (!hasAnswered && key in map) {
+        const target = optionsStack.children[map[key]];
+        if (target) target.click();
+      } else if (hasAnswered && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        nextBtn.click();
+      }
     });
+
+    // Start metadata loading on startup
+    loadSheetMetadata();
   </script>
 </body>
 </html>
