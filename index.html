@@ -212,6 +212,17 @@
       animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    .error-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin: 0 0 16px; padding: 12px 14px; border-radius: 14px;
+      background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fecaca; font-size: 14px; line-height: 1.4;
+    }
+    .error-retry {
+      flex-shrink: 0; padding: 8px 14px; border-radius: 10px; border: 0;
+      background: #ef4444; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    .res-best { font-size: 13px; opacity: 0.75; margin: -4px 0 14px; text-align: center; }
     .hidden {
       display: none !important;
     }
@@ -959,6 +970,11 @@
         </div>
       </div>
 
+      <div id="error-banner" class="error-banner hidden" role="alert">
+        <span id="error-text"></span>
+        <button id="error-retry" class="error-retry" type="button">Retry</button>
+      </div>
+
       <!-- Question Count Pill Group -->
       <div class="section-title">
         <span>Question Count</span>
@@ -1084,6 +1100,7 @@
 
         <h3 id="res-title" class="results-headline">Outstanding!</h3>
         <p id="res-desc" class="results-subhead">You completely dominated this trivia run.</p>
+        <p id="res-best" class="res-best"></p>
 
         <!-- Stats Trio -->
         <div class="stats-trio">
@@ -1384,12 +1401,51 @@
       sound.enabled = !sound.enabled;
       soundOnSvg.classList.toggle('hidden', !sound.enabled);
       soundOffSvg.classList.toggle('hidden', sound.enabled);
+      saveSettings();
       triggerHaptic('tap');
     });
 
     // ========================================================
     // SETUP VIEW LOGIC
     // ========================================================
+
+    // Persisted settings (localStorage may be unavailable)
+    const SETTINGS_KEY = 'quizpulse.settings';
+    const BEST_KEY = 'quizpulse.best';
+    function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    function saveSettings() {
+      lsSet(SETTINGS_KEY, {
+        amount: selectedAmount, diff: selectedDifficulty,
+        cat: selectedCategory, sub: selectedSubcategory, sound: sound.enabled
+      });
+    }
+    function restoreSettings() {
+      const st = lsGet(SETTINGS_KEY);
+      if (!st) return;
+      if ([5, 10, 15, 25].includes(st.amount)) {
+        selectedAmount = st.amount;
+        countSelector.querySelectorAll('.pill-btn').forEach(b =>
+          b.classList.toggle('active', parseInt(b.dataset.count, 10) === st.amount));
+      }
+      if (typeof st.diff === 'string' && ['', 'easy', 'medium', 'hard'].includes(st.diff)) {
+        selectedDifficulty = st.diff;
+        diffSelector.querySelectorAll('.pill-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.diff === st.diff));
+      }
+      if (st.sound === false) {
+        sound.enabled = false;
+        soundOnSvg.classList.add('hidden');
+        soundOffSvg.classList.remove('hidden');
+      }
+    }
+    function restoreCategory() {
+      const st = lsGet(SETTINGS_KEY);
+      if (!st || !st.cat || !categoryMap[st.cat]) return;
+      selectCategory(st.cat);
+      if (st.sub && categoryMap[st.cat].has(st.sub)) selectSubcategory(st.sub);
+    }
+    restoreSettings();
 
     // Question count selection
     countSelector.addEventListener('click', (e) => {
@@ -1398,6 +1454,7 @@
       countSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedAmount = parseInt(btn.dataset.count, 10);
+      saveSettings();
       triggerHaptic('tap');
     });
 
@@ -1408,7 +1465,22 @@
       diffSelector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedDifficulty = btn.dataset.diff;
+      saveSettings();
       triggerHaptic('tap');
+    });
+
+    // Inline error banner with retry
+    const errorBanner = document.getElementById('error-banner');
+    const errorText = document.getElementById('error-text');
+    let errorRetryFn = null;
+    function showError(msg, retryFn) {
+      errorText.textContent = msg;
+      errorRetryFn = retryFn;
+      errorBanner.classList.remove('hidden');
+    }
+    document.getElementById('error-retry').addEventListener('click', () => {
+      errorBanner.classList.add('hidden');
+      if (errorRetryFn) errorRetryFn();
     });
 
     // Sync categories & subcategories from Google Sheet
@@ -1432,11 +1504,13 @@
           });
 
           renderCategoryGrid();
+          restoreCategory();
           categoryBadgeCount.textContent = `${totalQuestions} Questions`;
         }
       } catch (err) {
         console.warn('Initial sheet sync notice:', err);
-        categoryBadgeCount.textContent = 'Live DB Connected';
+        categoryBadgeCount.textContent = 'Not connected';
+        showError(err.message || 'Could not load the Google Sheet.', loadSheetMetadata);
       }
     }
 
@@ -1460,10 +1534,13 @@
         const chip = document.createElement('div');
         chip.className = 'category-chip';
         chip.dataset.cat = cat;
-        chip.innerHTML = `
-          <div class="cat-emoji">${getCategoryEmoji(cat)}</div>
-          <div class="cat-name">${cat}</div>
-        `;
+        const emoji = document.createElement('div');
+        emoji.className = 'cat-emoji';
+        emoji.textContent = getCategoryEmoji(cat);
+        const name = document.createElement('div');
+        name.className = 'cat-name';
+        name.textContent = cat;
+        chip.append(emoji, name);
         chip.addEventListener('click', () => selectCategory(cat));
         categoriesGrid.appendChild(chip);
       });
@@ -1472,6 +1549,7 @@
     function selectCategory(cat) {
       selectedCategory = cat;
       selectedSubcategory = '';
+      saveSettings();
       triggerHaptic('tap');
 
       // Update active states
@@ -1505,6 +1583,7 @@
 
     function selectSubcategory(sub) {
       selectedSubcategory = sub;
+      saveSettings();
       triggerHaptic('tap');
       subcatScroller.querySelectorAll('.subcat-pill').forEach(pill => {
         pill.classList.toggle('active', (pill.textContent === sub) || (!sub && pill.textContent === 'All Subcategories'));
@@ -1584,9 +1663,9 @@
         quizScreen.classList.remove('hidden');
         renderQuestion();
       } catch (err) {
-        alert(err.message || 'Error connecting to Google Sheet.');
         loadingScreen.classList.add('hidden');
         setupScreen.classList.remove('hidden');
+        showError(err.message || 'Error connecting to Google Sheet.', startTrivia);
       }
     }
 
@@ -1624,10 +1703,13 @@
       choices.forEach((choice, idx) => {
         const btn = document.createElement('button');
         btn.className = 'opt-card';
-        btn.innerHTML = `
-          <div class="opt-badge">${letters[idx] || (idx + 1)}</div>
-          <div class="opt-text">${choice}</div>
-        `;
+        const badge = document.createElement('div');
+        badge.className = 'opt-badge';
+        badge.textContent = letters[idx] || (idx + 1);
+        const text = document.createElement('div');
+        text.className = 'opt-text';
+        text.textContent = choice;
+        btn.append(badge, text);
         btn.addEventListener('click', () => chooseAnswer(choice, q.correct_answer, btn));
         optionsStack.appendChild(btn);
       });
@@ -1704,6 +1786,17 @@
       setTimeout(() => {
         gaugeCircle.style.strokeDashoffset = offset;
       }, 100);
+
+      const best = lsGet(BEST_KEY);
+      const resBest = document.getElementById('res-best');
+      const isNewBest = !best || accuracy > best.accuracy ||
+        (accuracy === best.accuracy && questions.length > best.total);
+      if (isNewBest) {
+        lsSet(BEST_KEY, { accuracy, score, total: questions.length });
+        resBest.textContent = best ? `🏅 New personal best: ${score}/${questions.length} (${accuracy}%)` : '';
+      } else {
+        resBest.textContent = `Personal best: ${best.score}/${best.total} (${best.accuracy}%)`;
+      }
 
       if (accuracy >= 80) {
         resTitle.textContent = accuracy === 100 ? 'Perfection! 🏆' : 'Mastermind! 🌟';
